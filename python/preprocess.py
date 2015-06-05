@@ -14,3 +14,6 @@ __author__ = 'cmccully'
 # Generate reference catalogs
 
 # Solve for WCS tweak
+    # fit each star in the catalogue to a Moffat
+    # get the image centroids and Moffat parameters.
+    # can scale subimages according to the Moffat FWHM
