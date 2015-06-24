@@ -88,13 +88,8 @@ __author__ = 'cmccully'
 	#return self.readnoise
 
     # Use the read noise and the image data to make a noise map
-    # TODO Flag strong background gradients
-
-# Generate reference catalogs
 
 # Solve for WCS tweak
     # fit each star in the catalogue to a Moffat
     # get the image centroids and Moffat parameters.
     # can scale subimages according to the Moffat FWHM
-
-
