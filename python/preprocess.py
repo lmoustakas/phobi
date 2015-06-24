@@ -1,6 +1,7 @@
 __author__ = 'cmccully'
 
 # Collate image meta data
+    # Filename, MJD, FILTER, EXPTIME, RA0, DEC0
 
 # Create bad pixel masks
     # cosmic rays
@@ -17,3 +18,5 @@ __author__ = 'cmccully'
     # fit each star in the catalogue to a Moffat
     # get the image centroids and Moffat parameters.
     # can scale subimages according to the Moffat FWHM
+
+
