@@ -176,6 +176,8 @@ def emceeQuadFit(FM, ra_qsr, dec_qsr, ZP_mean, ZP_rms, alpha, beta, m1, m2, m3, 
   print 'chain saving complete'
 
 
+# Save the light curve.
+
 ###########################
 
 # Likelihood function
