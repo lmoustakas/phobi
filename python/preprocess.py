@@ -9,6 +9,17 @@ __author__ = 'cmccully'
 
 # Create a noise model
     # Estimate the read noise
+  def image_piece(self,ra, dec, pixels):
+    x,y = self.bigw.wcs_world2pix(ra,dec,1)
+    if(pixels%2==0):
+	    #print 'even'
+	    zoom_data = self.image_data[y-pixels/2:y+pixels/2,x-pixels/2:x+pixels/2]
+    if(pixels%2==1):
+	    #print 'odd'
+	    zoom_data = self.image_data[y-(pixels-1)/2:y+(pixels-1)/2+1,x-(pixels-1)/2:x+(pixels-1)/2+1]
+    return zoom_data
+    #plt.figure()
+
     def estimate_read_noise(self, display=0, out = 'out'):
 	readnoise=[]
 	for k in range(1000):
