@@ -1,2 +1,9 @@
-python
+PHOTometric Bayesian Inference (PHOBI) is a python based analysis package for crowded field photometry using Bayesian inference.
+The package is dividied into the following stage.
+
+1. preprocess.py : preprocessing of the data.
+
+2. photometer.py : photometric calibration and inferencing of crowded field objects.
+
+3. inferdelay.py : estimation of light curve delays for multiply imaged objects. 
 
