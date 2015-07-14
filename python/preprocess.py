@@ -1,7 +1,38 @@
 __author__ = 'cmccully'
 
+from astropy.io import fits
+from astropy.io import ascii
+from astropy.table import Table
+
+
 # Collate image meta data
-    # Filename, MJD, FILTER, EXPTIME, RA0, DEC0
+# Filename, MJD, FILTER, EXPTIME, RA0, DEC0
+def produce_meta_data(FITS_file_list, tag):
+    # This routine takes a list of FITS files, collates the metadata, and outputs them to an astropytable for quick reference.
+    # Create an astropy table, all entries are saved as strings
+    meta_data = Table(names=('filename', 'MJD-OBS', 'FILTER', 'EXPTIME', 'RA0', 'DEC0'), dtype=('S100', 'f8', 'S100', 'S100', 'S100', 'S100'))
+    for FITS_file_name in file(FITS_file_list):
+	hdulist = fits.open(FITS_file_name.split('\n')[0]) # the split function is used to ignore the text file line breaks
+	row = [] # initialize row
+	row.append(FITS_file_name.split('\n')[0])
+	row.append(float(hdulist[0].header['MJD-OBS']))
+	row.append(hdulist[0].header['FILTER'])
+	row.append(hdulist[0].header['EXPTIME'])
+	row.append(hdulist[0].header['RA'])
+	row.append(hdulist[0].header['DEC'])
+	#print row
+	meta_data.add_row(row)
+        #for key in  hdulist[0].header.keys():
+            #print key,'\t',hdulist[0].header[key]
+	#exit()
+	hdulist.close()
+    #print meta_data
+    #print 'sorting by MJD-OBS'
+    meta_data.sort(['MJD-OBS'])
+    #print meta_data
+    out_file = '../data/'+'meta_data_'+tag+'.fits'
+    meta_data.write(out_file)
+
 
 # Create bad pixel masks
     # cosmic rays
@@ -9,7 +40,7 @@ __author__ = 'cmccully'
 
 # Create a noise model
     # Estimate the read noise
-  def image_piece(self,ra, dec, pixels):
+def image_piece(self,ra, dec, pixels):
     x,y = self.bigw.wcs_world2pix(ra,dec,1)
     if(pixels%2==0):
 	    #print 'even'
