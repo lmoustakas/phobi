@@ -2,7 +2,7 @@ PHOTometric Bayesian Inference (PHOBI) is a python based analysis package for cr
 
 The required packages for this code are
 1. astropy v1.1  (pip install --no-deps astropy)
-2. lacosmic  (git clone https://github.com/cmccully/lacosmicx.git)
+2. astroscrappy  (git clone https://github.com/astropy/astroscrappy.git)
 
 
 The package is dividied into the following stage.
