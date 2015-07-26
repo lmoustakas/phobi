@@ -19,7 +19,7 @@ def main():
     # Pre-process images
     if(inputs['PREPROCESS']==True):
         preprocess.produce_meta_data(inputs['FILE_LIST'], inputs['TAG'])
-    # Photometer image
+        preprocess.produce_cosmic_ray_masks(inputs['FILE_LIST'], inputs['TAG'])
     # Make light curve
     # Infer Time delay
     return
