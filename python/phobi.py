@@ -19,8 +19,8 @@ def main():
 
     # Pre-process images
     if(inputs['PREPROCESS']==True):
-        meta_data = preprocess.produce_meta_data(inputs['FILE_LIST'], inputs['TAG'])
-        preprocess.loop(meta_data, inputs['TAG'])
+        metadata = preprocess.produce_metadata(inputs['FILE_LIST'], inputs['TAG'])
+        preprocess.loop(metadata, inputs['TAG'])
 
 
     # Make light curve

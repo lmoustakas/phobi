@@ -10,13 +10,13 @@ import utilities
 import numpy as np
 import pylab as plt
 
-def produce_meta_data(FITS_file_list, tag):
+def produce_metadata(FITS_file_list, tag):
     '''
     Collate image meta data
     This routine takes a list of FITS files, collates the metadata, and outputs them to an astropytable for quick reference.
     Create an astropy table, all entries are saved as strings
     '''
-    meta_data = Table(names=('filename', 'MJD-OBS', 'FILTER', 'EXPTIME', 'RA0', 'DEC0'), dtype=('S100', 'f8', 'S100', 'S100', 'S100', 'S100'))
+    metadata = Table(names=('filename', 'MJD-OBS', 'FILTER', 'EXPTIME', 'RA0', 'DEC0'), dtype=('S100', 'f8', 'S100', 'S100', 'S100', 'S100'))
     for FITS_file_name in file(FITS_file_list):
 	hdulist = fits.open(FITS_file_name.split('\n')[0]) # the split function is used to ignore the text file line breaks
 	row = [] 
@@ -26,31 +26,37 @@ def produce_meta_data(FITS_file_list, tag):
 	row.append(hdulist[0].header['EXPTIME'])
 	row.append(hdulist[0].header['RA'])
 	row.append(hdulist[0].header['DEC'])
-	meta_data.add_row(row)
+	metadata.add_row(row)
         #for key in  hdulist[0].header.keys():
             #print key,'\t',hdulist[0].header[key]
 	#exit()
 	hdulist.close()
-    meta_data.sort(['MJD-OBS'])
-    out_file = '../data/'+'meta_data_'+tag+'.tbl'
-    meta_data.write(out_file, format = 'aastex')
-    return meta_data
+    metadata.sort(['MJD-OBS'])
+    out_file = '../data/'+'metadata_'+tag+'.tbl'
+    metadata.write(out_file, format = 'aastex')
+    return metadata
 
-def loop(meta_data_table, tag):
-    # Store meta data from the loop
-    #print meta_data_table['filename']
-    #exit()
-    counter = 0
-    # want to add columns to the metadata file. overwrite as it runs
-    for FITS_file_name in meta_data_table['filename']:
-        hdulist = fits.open(FITS_file_name.split('\n')[0])
+def loop(metadata_table, tag):
+    '''
+    Loop through files and update the metadata table.
+    This function produces cosmic ray masks and stores the number of masked pixels in metadata.
+    Future updates will fit the PSF and store its values.
+    '''
+    metadata_table['num_masked_pixels']=-1
+    for table_index in range(0,len(metadata_table)):
+        # open fits file
+        hdulist = fits.open(metadata_table['filename'][table_index])
+        # create a cosmic ray mask
         mask = produce_cosmic_ray_masks(hdulist, tag)
+        # Trim out bad pixel edges. 
 	trimsec = utilities.parse_region_keyword(hdulist[0].header['TRIMSEC'])
-        np.sum(mask), np.sum(mask[trimsec])
-        t = Time( meta_data_table['MJD-OBS'][counter], format='mjd' )
-        print FITS_file_name, meta_data_table['MJD-OBS'][counter], np.sum(mask), np.sum(mask[trimsec])
+        # Add a new column to the metadata table to include the number of pixels masked out of the trimmed field.
+        metadata_table['num_masked_pixels'][table_index] = np.sum(mask[trimsec])
+        # Close the fits file
         hdulist.close()
-	counter+=1
+	# Update the metadata table
+        out_file = '../data/'+'metadata_'+tag+'.tbl'
+        metadata_table.write(out_file, format = 'aastex')
 
 # Create bad pixel masks
     # cosmic rays
