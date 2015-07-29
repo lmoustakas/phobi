@@ -3,31 +3,12 @@ __author__ = 'cmccully'
 from astropy.io import fits
 from astropy.io import ascii
 from astropy.table import Table
+from astropy.time import Time
 from astroscrappy import detect_cosmics
+import utilities
 
 import numpy as np
 import pylab as plt
-
-def split_slice(pixel_section):
-    pixels = pixel_section.split(':')
-    return slice(int(pixels[0]) - 1, int(pixels[1]))
-
-def parse_region_keyword(keyword_value):
-    """
-    Convert a header keyword of the form [x1:x2],[y1:y2] into index slices
-    :param keyword_value: Header keyword string
-    :return: x, y index slices
-    """
-
-    if keyword_value.lower() == 'unknown':
-        pixel_slices = None
-    else:
-        # Strip off the brackets and split the coordinates
-        pixel_sections = keyword_value[1:-1].split(',')
-        x_slice = split_slice(pixel_sections[0])
-        y_slice = split_slice(pixel_sections[1])
-        pixel_slices = (y_slice, x_slice)
-    return pixel_slices
 
 def produce_meta_data(FITS_file_list, tag):
     '''
@@ -51,43 +32,59 @@ def produce_meta_data(FITS_file_list, tag):
 	#exit()
 	hdulist.close()
     meta_data.sort(['MJD-OBS'])
-    out_file = '../data/'+'meta_data_'+tag+'.fits'
-    meta_data.write(out_file)
+    out_file = '../data/'+'meta_data_'+tag+'.tbl'
+    meta_data.write(out_file, format = 'aastex')
+    return meta_data
 
+def loop(meta_data_table, tag):
+    # Store meta data from the loop
+    #print meta_data_table['filename']
+    #exit()
+    counter = 0
+    # want to add columns to the metadata file. overwrite as it runs
+    for FITS_file_name in meta_data_table['filename']:
+        hdulist = fits.open(FITS_file_name.split('\n')[0])
+        mask = produce_cosmic_ray_masks(hdulist, tag)
+	trimsec = utilities.parse_region_keyword(hdulist[0].header['TRIMSEC'])
+        np.sum(mask), np.sum(mask[trimsec])
+        t = Time( meta_data_table['MJD-OBS'][counter], format='mjd' )
+        print FITS_file_name, meta_data_table['MJD-OBS'][counter], np.sum(mask), np.sum(mask[trimsec])
+        hdulist.close()
+	counter+=1
 
 # Create bad pixel masks
     # cosmic rays
     # Shutter issues
-def produce_cosmic_ray_masks(FITS_file_list, tag):
-    for FITS_file_name in file(FITS_file_list):
-        #print FITS_file_name
-        hdulist = fits.open(FITS_file_name.split('\n')[0]) # the split function is used to ignore the text file line breaks
-        # trimsec = parse_region_keyword(hdulist[0].header['TRIMSEC'])
-        # mask, clean = detect_cosmics(hdulist[0].data[trimsec], sigfrac=0.15, sigclip=4, objlim=4, cleantype='idw')
-        trimsec = parse_region_keyword(hdulist[0].header)
-        mask, clean = detect_cosmics(hdulist[0].data, sigfrac=0.15, sigclip=4, objlim=4, cleantype='idw')
-        '''
-        # plots to test out code
-        print 'TRIMSEC', hdulist[0].header['TRIMSEC']
-        print 'trimsec', trimsec
-        print np.sum(mask), np.size(hdulist[0].data[trimsec].ravel())
-        plt.figure()
-        ax = plt.subplot(221)
-        print  np.percentile((hdulist[0].data), 95.)
-        plt.imshow(hdulist[0].data[trimsec], interpolation = 'none', cmap='jet', vmin = np.percentile(hdulist[0].data[trimsec], 1.), vmax = np.percentile(hdulist[0].data[trimsec], 95.))
-        plt.colorbar()
-        plt.subplot(222, sharex=ax, sharey=ax)
-        plt.imshow(mask, interpolation = 'none', cmap='gray_r')
-        plt.colorbar()
-        plt.subplot(223, sharex=ax, sharey=ax)
-        plt.imshow(clean, interpolation = 'none', cmap='jet', vmin = np.percentile(clean, 1.), vmax = np.percentile(clean, 95.))
-        plt.colorbar()
-        plt.subplot(224, sharex=ax, sharey=ax)
-        plt.imshow(np.ma.masked_where(mask==1,hdulist[0].data[trimsec]), interpolation = 'none', cmap='jet', vmin = np.percentile(hdulist[0].data[trimsec], 1.), vmax = np.percentile(hdulist[0].data[trimsec], 95.))
-        plt.colorbar()
-	plt.show()
-        '''
-        return mask
+def produce_cosmic_ray_masks(hdulist, tag):
+    #hdulist = fits.open(FITS_file_name.split('\n')[0]) # the split function is used to ignore the text file line breaks
+    mask, clean = detect_cosmics(hdulist[0].data, sigfrac=0.15, sigclip=4, objlim=4, cleantype='idw')
+    #if(trim==False):
+    #    mask, clean = detect_cosmics(hdulist[0].data, sigfrac=0.15, sigclip=4, objlim=4, cleantype='idw')
+    #if(trim==True):
+    #    trimsec = utilities.parse_region_keyword(hdulist[0].header['TRIMSEC'])
+    #    mask, clean = detect_cosmics(hdulist[0].data[trimsec], sigfrac=0.15, sigclip=4, objlim=4, cleantype='idw')
+    '''
+    # plots to test out code
+    print 'TRIMSEC', hdulist[0].header['TRIMSEC']
+    print 'trimsec', trimsec
+    print np.sum(mask), np.size(hdulist[0].data[trimsec].ravel())
+    plt.figure()
+    ax = plt.subplot(221)
+    print  np.percentile((hdulist[0].data), 95.)
+    plt.imshow(hdulist[0].data[trimsec], interpolation = 'none', cmap='jet', vmin = np.percentile(hdulist[0].data[trimsec], 1.), vmax = np.percentile(hdulist[0].data[trimsec], 95.))
+    plt.colorbar()
+    plt.subplot(222, sharex=ax, sharey=ax)
+    plt.imshow(mask, interpolation = 'none', cmap='gray_r')
+    plt.colorbar()
+    plt.subplot(223, sharex=ax, sharey=ax)
+    plt.imshow(clean, interpolation = 'none', cmap='jet', vmin = np.percentile(clean, 1.), vmax = np.percentile(clean, 95.))
+    plt.colorbar()
+    plt.subplot(224, sharex=ax, sharey=ax)
+    plt.imshow(np.ma.masked_where(mask==1,hdulist[0].data[trimsec]), interpolation = 'none', cmap='jet', vmin = np.percentile(hdulist[0].data[trimsec], 1.), vmax = np.percentile(hdulist[0].data[trimsec], 95.))
+    plt.colorbar()
+    plt.show()
+    '''
+    return mask
 
 
 #  Create a noise model

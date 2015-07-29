@@ -4,6 +4,7 @@ import preprocess
 import argparse
 import datetime
 
+
 def main():
     # argument parsing
     parser=argparse.ArgumentParser(description='phobi routine crowded field photometry')
@@ -18,8 +19,10 @@ def main():
 
     # Pre-process images
     if(inputs['PREPROCESS']==True):
-        preprocess.produce_meta_data(inputs['FILE_LIST'], inputs['TAG'])
-        preprocess.produce_cosmic_ray_masks(inputs['FILE_LIST'], inputs['TAG'])
+        meta_data = preprocess.produce_meta_data(inputs['FILE_LIST'], inputs['TAG'])
+        preprocess.loop(meta_data, inputs['TAG'])
+
+
     # Make light curve
     # Infer Time delay
     return
