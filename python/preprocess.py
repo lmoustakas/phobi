@@ -62,8 +62,10 @@ def produce_cosmic_ray_masks(FITS_file_list, tag):
     for FITS_file_name in file(FITS_file_list):
         #print FITS_file_name
         hdulist = fits.open(FITS_file_name.split('\n')[0]) # the split function is used to ignore the text file line breaks
-        trimsec = parse_region_keyword(hdulist[0].header['TRIMSEC'])
-        mask, clean = detect_cosmics(hdulist[0].data[trimsec], sigfrac=0.15, sigclip=4, objlim=4, cleantype='idw')
+        # trimsec = parse_region_keyword(hdulist[0].header['TRIMSEC'])
+        # mask, clean = detect_cosmics(hdulist[0].data[trimsec], sigfrac=0.15, sigclip=4, objlim=4, cleantype='idw')
+        trimsec = parse_region_keyword(hdulist[0].header)
+        mask, clean = detect_cosmics(hdulist[0].data, sigfrac=0.15, sigclip=4, objlim=4, cleantype='idw')
         '''
         # plots to test out code
         print 'TRIMSEC', hdulist[0].header['TRIMSEC']
@@ -90,18 +92,18 @@ def produce_cosmic_ray_masks(FITS_file_list, tag):
 
 #  Create a noise model
     # Estimate the read noise
-def image_piece(self,ra, dec, pixels):
-    x,y = self.bigw.wcs_world2pix(ra,dec,1)
+def sub_image(ra, dec, bigw, hdulist, pixels, mask='none'):
+    x,y = bigw.wcs_world2pix(ra,dec,1)
     if(pixels%2==0):
 	    #print 'even'
-	    zoom_data = self.image_data[y-pixels/2:y+pixels/2,x-pixels/2:x+pixels/2]
+	    sub_image = image_data[y-pixels/2:y+pixels/2,x-pixels/2:x+pixels/2]
     if(pixels%2==1):
 	    #print 'odd'
-	    zoom_data = self.image_data[y-(pixels-1)/2:y+(pixels-1)/2+1,x-(pixels-1)/2:x+(pixels-1)/2+1]
-    return zoom_data
+	    sub_image = image_data[y-(pixels-1)/2:y+(pixels-1)/2+1,x-(pixels-1)/2:x+(pixels-1)/2+1]
+    return sub_image
     #plt.figure()
 
-    def estimate_read_noise(self, display=0, out = 'out'):
+def estimate_read_noise(self, display=0, out = 'out'):
 	readnoise=[]
 	for k in range(1000):
 		#print self.image_data.shape
@@ -110,7 +112,7 @@ def image_piece(self,ra, dec, pixels):
 		r, d = self.bigw.wcs_pix2world(x,y, 1)
 		#print 'x,y',x,y
 		#print 'ra,dec',r,d
-		img = self.image_piece(r, d, 31)
+		img = self.sub_image(r, d, 31)
 		#img/=float(self.hdulist[0].header['GAIN']) # remove gain correction. read noise is on electrons, not photons ?		
 		count = 0
 		
@@ -122,7 +124,7 @@ def image_piece(self,ra, dec, pixels):
 			r, d = self.bigw.wcs_pix2world(x,y, 1)
 			#print 'x,y',x,y
 			#print 'ra,dec',r,d
-			img = self.image_piece(r, d, 31)
+			img = self.sub_image(r, d, 31)
 		
 		h,b = np.histogram(img.flat, bins=30)
 		x=b[:-1]+(b[1]-b[0])/2.
