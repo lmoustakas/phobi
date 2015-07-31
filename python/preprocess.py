@@ -10,14 +10,15 @@ import utilities
 import numpy as np
 import pylab as plt
 
-def produce_metadata(FITS_file_list, tag):
+def produce_metadata(inputs):
     '''
     Collate image meta data
     This routine takes a list of FITS files, collates the metadata, and outputs them to an astropytable for quick reference.
     Create an astropy table, all entries are saved as strings
     '''
+
     metadata = Table(names=('filename', 'MJD-OBS', 'FILTER', 'EXPTIME', 'RA0', 'DEC0'), dtype=('S100', 'f8', 'S100', 'S100', 'S100', 'S100'))
-    for FITS_file_name in file(FITS_file_list):
+    for FITS_file_name in file(inputs['FILE_LIST']):
 	hdulist = fits.open(FITS_file_name.split('\n')[0]) # the split function is used to ignore the text file line breaks
 	row = [] 
 	row.append(FITS_file_name.split('\n')[0])
@@ -32,11 +33,11 @@ def produce_metadata(FITS_file_list, tag):
 	#exit()
 	hdulist.close()
     metadata.sort(['MJD-OBS'])
-    out_file = '../data/'+'metadata_'+tag+'.tbl'
+    out_file = '../data/'+'metadata_'+inputs['TAG']+'.tbl'
     metadata.write(out_file, format = 'aastex')
     return metadata
 
-def loop(metadata_table, tag):
+def loop(metadata_table, inputs):
     '''
     Loop through files and update the metadata table.
     This function produces cosmic ray masks and stores the number of masked pixels in metadata.
@@ -47,7 +48,7 @@ def loop(metadata_table, tag):
         # open fits file
         hdulist = fits.open(metadata_table['filename'][table_index])
         # create a cosmic ray mask
-        mask = produce_cosmic_ray_masks(hdulist, tag)
+        mask = produce_cosmic_ray_masks(hdulist, inputs['TAG'])
         # Trim out bad pixel edges. 
 	trimsec = utilities.parse_region_keyword(hdulist[0].header['TRIMSEC'])
         # Add a new column to the metadata table to include the number of pixels masked out of the trimmed field.
@@ -55,13 +56,13 @@ def loop(metadata_table, tag):
         # Close the fits file
         hdulist.close()
 	# Update the metadata table
-        out_file = '../data/'+'metadata_'+tag+'.tbl'
+        out_file = '../data/'+'metadata_'+inputs['TAG']+'.tbl'
         metadata_table.write(out_file, format = 'aastex')
 
 # Create bad pixel masks
     # cosmic rays
     # Shutter issues
-def produce_cosmic_ray_masks(hdulist, tag):
+def produce_cosmic_ray_masks(hdulist, inputs):
     #hdulist = fits.open(FITS_file_name.split('\n')[0]) # the split function is used to ignore the text file line breaks
     mask, clean = detect_cosmics(hdulist[0].data, sigfrac=0.15, sigclip=4, objlim=4, cleantype='idw')
     #if(trim==False):

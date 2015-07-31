@@ -6,8 +6,9 @@
 'TAG'	      : 'LCOGT_HE0435' , 		# tag to be used for output file names
 'DATE_APPEND' :  True,				# append the date and time to the output file names. This prevents overwriting and loss of data.
 'PREPROCESS'  :  True,				# Preprocess the data 
-'PHOTOMETER'  :  False,			# Perform photmetric estimation on the data
-'INFERDELAY'  :  False,			# Infer delays
+'PHOTOMETER'  :  False,				# Perform photmetric estimation on the data
+'INFERDELAY'  :  False,				# Infer delays
+'PLOTMASKS'   :  True, 				# Produce plots of cosmic ray masks
 }
 
 
