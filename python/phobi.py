@@ -13,6 +13,11 @@ def main():
 
     # read the input file and return a dictionary
     inputs = eval(open(args.inputs_file).read())
+   
+    print '========== INPUT FILE:  %s  ==============='%args.inputs_file
+    for line in file(args.inputs_file):
+        print line.split('\n')[0]
+    print '==============================================='
     # if DATE_APPEND flag is True, append the output filename tage with the current date and time.
     # this is useful to prevent overwriting outputs
     if(inputs['DATE_APPEND']): inputs['TAG'] = ''.join([inputs['TAG'], datetime.datetime.now().strftime("_%Y_%m_%d_%H:%M:%S")])

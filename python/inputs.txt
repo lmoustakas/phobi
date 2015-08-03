@@ -2,13 +2,13 @@
 # This file is read into Python as a dictionary with the following line of code. inputs = eval(open("input.txt").read()) 
 
 {
-'FILE_LIST'   : '../data/FITS_file_list.txt',	# text file listing directory path and file name of images to be analyzed.
+'FILE_LIST'   : '../data/experiment_FITS_file_list.txt',	# text file listing directory path and file name of images to be analyzed.
 'TAG'	      : 'LCOGT_HE0435' , 		# tag to be used for output file names
 'DATE_APPEND' :  True,				# append the date and time to the output file names. This prevents overwriting and loss of data.
 'PREPROCESS'  :  True,				# Preprocess the data 
 'PHOTOMETER'  :  False,				# Perform photmetric estimation on the data
 'INFERDELAY'  :  False,				# Infer delays
-'PLOTMASKS'   :  True, 				# Produce plots of cosmic ray masks
+'PLOTMASKS'   :  False 				# Produce plots of cosmic ray masks
 }
 
 

@@ -6,6 +6,7 @@ from astropy.table import Table
 from astropy.time import Time
 from astroscrappy import detect_cosmics
 import utilities
+import os
 
 import numpy as np
 import pylab as plt
@@ -16,22 +17,23 @@ def produce_metadata(inputs):
     This routine takes a list of FITS files, collates the metadata, and outputs them to an astropytable for quick reference.
     Create an astropy table, all entries are saved as strings
     '''
-
+    print 'Initiating metadata table' 
     metadata = Table(names=('filename', 'MJD-OBS', 'FILTER', 'EXPTIME', 'RA0', 'DEC0'), dtype=('S100', 'f8', 'S100', 'S100', 'S100', 'S100'))
     for FITS_file_name in file(inputs['FILE_LIST']):
-	hdulist = fits.open(FITS_file_name.split('\n')[0]) # the split function is used to ignore the text file line breaks
-	row = [] 
-	row.append(FITS_file_name.split('\n')[0])
-	row.append(float(hdulist[0].header['MJD-OBS']))
-	row.append(hdulist[0].header['FILTER'])
-	row.append(hdulist[0].header['EXPTIME'])
-	row.append(hdulist[0].header['RA'])
-	row.append(hdulist[0].header['DEC'])
-	metadata.add_row(row)
-        #for key in  hdulist[0].header.keys():
-            #print key,'\t',hdulist[0].header[key]
-	#exit()
-	hdulist.close()
+        fnm = FITS_file_name.split('\n')[0]
+        if(os.path.isfile(fnm)):
+   	    hdulist = fits.open(fnm) # the split function is used to ignore the text file line breaks
+	    row = [] 
+	    row.append(FITS_file_name.split('\n')[0])
+	    row.append(float(hdulist[0].header['MJD-OBS']))
+	    row.append(hdulist[0].header['FILTER'])
+	    row.append(hdulist[0].header['EXPTIME'])
+	    row.append(hdulist[0].header['RA'])
+	    row.append(hdulist[0].header['DEC'])
+	    metadata.add_row(row)
+	    hdulist.close()
+        if(not os.path.isfile(fnm)):
+            print 'WARNING, THE FOLLOWING FILE DOES NOT EXIST:', fnm
     metadata.sort(['MJD-OBS'])
     out_file = '../data/'+'metadata_'+inputs['TAG']+'.tbl'
     metadata.write(out_file, format = 'aastex')
@@ -43,12 +45,23 @@ def loop(metadata_table, inputs):
     This function produces cosmic ray masks and stores the number of masked pixels in metadata.
     Future updates will fit the PSF and store its values.
     '''
+    print 'preprocess loop' 
+    '''
+    # set up directories for plot outputs
+    plot_masks_dir = 'plots/out_%s/pre-process/cr_masks/'%inputs['TAG']
+    print 'plot_masks_dir', plot_masks_dir
+    if(inputs['PLOTMASKS']):
+        os.makedirs(plot_masks_dir)
+    '''
+    # initialize pre-process loop outputs
     metadata_table['num_masked_pixels']=-1
+
+    # loop through image files
     for table_index in range(0,len(metadata_table)):
         # open fits file
         hdulist = fits.open(metadata_table['filename'][table_index])
         # create a cosmic ray mask
-        mask = produce_cosmic_ray_masks(hdulist, inputs['TAG'])
+        mask = produce_cosmic_ray_masks(hdulist, inputs, fnm = metadata_table['filename'][table_index].split('/')[-1])
         # Trim out bad pixel edges. 
 	trimsec = utilities.parse_region_keyword(hdulist[0].header['TRIMSEC'])
         # Add a new column to the metadata table to include the number of pixels masked out of the trimmed field.
@@ -62,35 +75,40 @@ def loop(metadata_table, inputs):
 # Create bad pixel masks
     # cosmic rays
     # Shutter issues
-def produce_cosmic_ray_masks(hdulist, inputs):
-    #hdulist = fits.open(FITS_file_name.split('\n')[0]) # the split function is used to ignore the text file line breaks
+def produce_cosmic_ray_masks(hdulist, inputs, fnm):
     mask, clean = detect_cosmics(hdulist[0].data, sigfrac=0.15, sigclip=4, objlim=4, cleantype='idw')
-    #if(trim==False):
-    #    mask, clean = detect_cosmics(hdulist[0].data, sigfrac=0.15, sigclip=4, objlim=4, cleantype='idw')
-    #if(trim==True):
-    #    trimsec = utilities.parse_region_keyword(hdulist[0].header['TRIMSEC'])
-    #    mask, clean = detect_cosmics(hdulist[0].data[trimsec], sigfrac=0.15, sigclip=4, objlim=4, cleantype='idw')
-    '''
-    # plots to test out code
-    print 'TRIMSEC', hdulist[0].header['TRIMSEC']
-    print 'trimsec', trimsec
-    print np.sum(mask), np.size(hdulist[0].data[trimsec].ravel())
-    plt.figure()
-    ax = plt.subplot(221)
-    print  np.percentile((hdulist[0].data), 95.)
-    plt.imshow(hdulist[0].data[trimsec], interpolation = 'none', cmap='jet', vmin = np.percentile(hdulist[0].data[trimsec], 1.), vmax = np.percentile(hdulist[0].data[trimsec], 95.))
-    plt.colorbar()
-    plt.subplot(222, sharex=ax, sharey=ax)
-    plt.imshow(mask, interpolation = 'none', cmap='gray_r')
-    plt.colorbar()
-    plt.subplot(223, sharex=ax, sharey=ax)
-    plt.imshow(clean, interpolation = 'none', cmap='jet', vmin = np.percentile(clean, 1.), vmax = np.percentile(clean, 95.))
-    plt.colorbar()
-    plt.subplot(224, sharex=ax, sharey=ax)
-    plt.imshow(np.ma.masked_where(mask==1,hdulist[0].data[trimsec]), interpolation = 'none', cmap='jet', vmin = np.percentile(hdulist[0].data[trimsec], 1.), vmax = np.percentile(hdulist[0].data[trimsec], 95.))
-    plt.colorbar()
-    plt.show()
-    '''
+    if(inputs['PLOTMASKS']):
+        plt.rcParams['figure.facecolor']='white'
+        plt.rcParams['font.size']=18
+        print 'PLOTTING CR MASKS'
+        # plots to test out code
+        # print 'TRIMSEC', hdulist[0].header['TRIMSEC']
+        # print 'trimsec', trimsec
+        # print np.sum(mask), np.size(hdulist[0].data[trimsec].ravel())
+        plt.figure(figsize=(23,6))
+        plt.suptitle(fnm.split('/')[-1].split('.')[0])
+	trimsec = utilities.parse_region_keyword(hdulist[0].header['TRIMSEC'])
+        ax = plt.subplot(131)
+        #print  np.percentile((hdulist[0].data), 99.9)
+        #plt.imshow(hdulist[0].data[trimsec], interpolation = 'none', cmap='jet', vmin = np.percentile(hdulist[0].data[trimsec], 0.5), vmax = np.percentile(hdulist[0].data[trimsec], 99.5))
+        plt.imshow(np.log10(hdulist[0].data[trimsec]), interpolation = 'none', cmap='jet', vmin = np.log10(np.percentile(hdulist[0].data[trimsec], 0.5)), vmax = np.log10(np.percentile(hdulist[0].data[trimsec], 99.5)))
+	plt.ylim(4096,0)
+	plt.xlim(0, 4096)
+        plt.colorbar()
+        plt.subplot(132, sharex=ax, sharey=ax)
+        #plt.imshow(np.ma.masked_where(mask[trimsec]==1,hdulist[0].data[trimsec]), interpolation = 'none', cmap='jet', vmin = np.percentile(hdulist[0].data[trimsec], 0.5), vmax = np.percentile(hdulist[0].data[trimsec], 99.5))
+        plt.imshow(np.log10(np.ma.masked_where(mask[trimsec]==1,hdulist[0].data[trimsec])), interpolation = 'none', cmap='jet', vmin = np.log10(np.percentile(hdulist[0].data[trimsec], 0.5)), vmax = np.log10(np.percentile(hdulist[0].data[trimsec], 99.5)))
+        plt.colorbar()
+        plt.xlabel('Pixel (%1.2f arcsec/pixel)'%hdulist[0].header['PIXSCALE'])
+        plt.subplot(133, sharex=ax, sharey=ax)
+        plt.imshow(mask[trimsec], interpolation = 'none', cmap='gray_r')
+        plt.colorbar()
+        #plt.subplot(224, sharex=ax, sharey=ax)
+        #plt.imshow(clean[trimsec], interpolation = 'none', cmap='jet', vmin = np.percentile(clean, 0.5), vmax = np.percentile(clean, 99.5))
+        #plt.colorbar()
+	plt.subplots_adjust(left=0.05, right=0.95)
+        plt.show()
+        #plt.savefig(outfnm)
     return mask
 
 
