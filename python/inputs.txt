@@ -8,7 +8,9 @@
 'PREPROCESS'  :  True,				# Preprocess the data 
 'PHOTOMETER'  :  False,				# Perform photmetric estimation on the data
 'INFERDELAY'  :  False,				# Infer delays
-'PLOTMASKS'   :  False 				# Produce plots of cosmic ray masks
+'PLOTMASKS'   :  False,				# Produce plots of cosmic ray masks
+'PLOTREADNOISE'   :  False 			# Produce plots of readnoise estimation
+
 }
 
 
