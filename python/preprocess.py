@@ -149,6 +149,18 @@ def rms(array):
 	return np.sqrt( np.mean(array**2) - np.mean(array)**2 )
 
 def estimate_read_noise(hdulist, bigw, Npx = 31, display=False, out = 'out'):
+
+    '''
+    trimsec = utilities.parse_region_keyword(hdulist[0].header['TRIMSEC'])
+    plt.figure()
+    plt.hist(np.ravel(hdulist[0].data[trimsec]))
+    plt.figure()
+    #plt.imshow(hdulist[0].data, interpolation='none')
+    plt.imshow(np.log10(np.abs(hdulist[0].data[trimsec])), interpolation='none', cmap='gray_r')
+    plt.colorbar()
+    plt.show()
+    '''
+
     # get valid image limits
     xmin = int((hdulist[0].header['TRIMSEC'])[1:-1].split(',')[0].split(':')[0])
     xmax = int((hdulist[0].header['TRIMSEC'])[1:-1].split(',')[0].split(':')[1])
@@ -159,10 +171,12 @@ def estimate_read_noise(hdulist, bigw, Npx = 31, display=False, out = 'out'):
     # initialize the sample counter
     count = 0
     trials=0
+
     while(count<1000): # sample 1000 sub-images for the fits file
         # if no acceptable noise estimates are found below, then bail after 20000 trials
         trials += 1
-        if(trials>20000):
+	#print trials, count
+        if(trials>100000):
             return -1
         # sample sub-images of size Npx by Npx for random locations in the fits file image image
         x = np.random.randint(xmin+Npx, xmax-Npx)
@@ -194,18 +208,7 @@ def estimate_read_noise(hdulist, bigw, Npx = 31, display=False, out = 'out'):
         v=b[:-1]+(b[1]-b[0])/2.
         # Fit a Gaussian, if the fit fails, then don't accept this trial as a noise sample.
 
-        '''
-        plt.figure()
-        plt.imshow(hdulist[0].data, interpolation='none')
-        plt.colorbar()
-        plt.figure()
-        plt.subplot(121)
-        plt.imshow(img, interpolation  = 'none')
-        plt.colorbar()
-        plt.subplot(122)
-        plt.step(v,h,where='mid')
-        plt.show()
-        '''
+	        
         try:
             p0 = [np.max(h), np.mean(img), np.sqrt( np.mean(img**2)-np.mean(img)**2 )]
             popt, pcov = curve_fit(gaussian, (v), h, p0=p0)
@@ -260,11 +263,15 @@ def estimate_read_noise(hdulist, bigw, Npx = 31, display=False, out = 'out'):
         plt.subplots_adjust(top=0.85, wspace=0.3, hspace=0.4)
         #plt.savefig(out+'.png', dpi=50)
         plt.savefig(out+'.pdf')
-        #plt.show()
+        plt.show()
     return readnoise
 
     # Use the read noise and the image data to make a noise map
 
+def source_calibration(inputs):
+    source_table = ascii.read(inputs['SOURCE_TABLE'])
+# Read Reference Catalogue
+# 
 # Solve for WCS tweak
     # fit each star in the catalogue to a Moffat
     # get the image centroids and Moffat parameters.
